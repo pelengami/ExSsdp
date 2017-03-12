@@ -1,37 +1,82 @@
 ﻿using System;
-using System.Diagnostics;
-using System.IO;
+using System.Collections.Concurrent;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ExSsdp.Network;
 using ExSsdp.Util;
 
 namespace ExSsdp.Http
 {
-	internal sealed class HttpDeviceInfoPublisher
+	public sealed class HttpDeviceInfoPublisher
 	{
+		private readonly NetworkInfoProvider _networkInfoProvider;
+		private readonly int _port;
 		private readonly int _accepts = 4;
 		private readonly HttpListener _httpListener;
+		private readonly ConcurrentDictionary<string, string> _deviceLocationAndInfo = new ConcurrentDictionary<string, string>();
 
-		public HttpDeviceInfoPublisher()
+		public HttpDeviceInfoPublisher(NetworkInfoProvider networkInfoProvider, int port)
 		{
+			if (networkInfoProvider == null) throw new ArgumentNullException(nameof(networkInfoProvider));
+			if (port < 0) throw new InvalidOperationException(nameof(port));
+
+			_networkInfoProvider = networkInfoProvider;
+			_port = port;
 			_httpListener = new HttpListener();
 			_accepts *= Environment.ProcessorCount;
 		}
 
-		public void Run(string uriPrefix, CancellationToken cancellationToken)
+		public void AddDeviceInfo(string location, string xmlDocument)
 		{
-			_httpListener.Prefixes.Add(uriPrefix);
+			if (_deviceLocationAndInfo.ContainsKey(location))
+				return;
+
+			_deviceLocationAndInfo.TryAdd(location, xmlDocument);
+		}
+
+		public void Dispose()
+		{
+			_httpListener.Stop();
+		}
+
+		public void Run(CancellationToken cancellationToken)
+		{
+			foreach (var ipAddressesFromAdapter in _networkInfoProvider.GetIpAddressesFromAdapters())
+			{
+				var ipAddress = IPAddress.Parse(ipAddressesFromAdapter);
+
+				string prefix;
+
+				switch (ipAddress.AddressFamily)
+				{
+					case AddressFamily.InterNetwork:
+						prefix = $"http://{ipAddressesFromAdapter}:{_port}/upnp/description/";
+						break;
+
+					case AddressFamily.InterNetworkV6:
+						prefix = $"http://[{ipAddressesFromAdapter}]:{_port}/upnp/description/";
+						break;
+
+					default:
+						throw new ArgumentOutOfRangeException(nameof(ipAddress.AddressFamily));
+				}
+
+				Console.WriteLine($"published on: {prefix}");
+
+				_httpListener.Prefixes.Add(prefix);
+			}
 
 			try
 			{
 				_httpListener.Start();
 			}
-			catch (HttpListenerException hlex)
+			catch (HttpListenerException exception)
 			{
 				//todo write to log
-				Console.Error.WriteLine(hlex.Message);
+				Console.Error.WriteLine(exception.Message);
 				throw new InvalidOperationException();
 			}
 
@@ -39,12 +84,12 @@ namespace ExSsdp.Http
 
 			var listenerAction = new Action(async delegate
 			{
-				semaphore.WaitOne();
-
-				var context = await _httpListener.GetContextAsync();
-
 				try
 				{
+					semaphore.WaitOne();
+
+					var context = await _httpListener.GetContextAsync();
+
 					semaphore.Release();
 					await ProcessListenerContextAsync(context);
 				}
@@ -57,11 +102,20 @@ namespace ExSsdp.Http
 			Repeater.DoInfinityAsync(listenerAction, TimeSpan.Zero, cancellationToken);
 		}
 
-		private static async Task ProcessListenerContextAsync(HttpListenerContext listenerContext)
+		private async Task ProcessListenerContextAsync(HttpListenerContext listenerContext)
 		{
 			try
 			{
-				byte[] data = Encoding.UTF8.GetBytes("");
+				var requestEndPoint = listenerContext.Request.LocalEndPoint;
+				if (requestEndPoint == null)
+					return;
+
+				string deviceInfo;
+
+				if (!_deviceLocationAndInfo.TryGetValue(requestEndPoint.ToString(), out deviceInfo))
+					return;
+
+				byte[] data = Encoding.UTF8.GetBytes(deviceInfo);
 
 				listenerContext.Response.StatusCode = 200;
 				listenerContext.Response.KeepAlive = false;
@@ -78,8 +132,8 @@ namespace ExSsdp.Http
 			}
 			catch (Exception ex)
 			{
-				// TODO: better exception handling
-				Trace.WriteLine(ex.ToString());
+				//todo write to log
+				Console.Error.WriteLine(ex.Message);
 			}
 		}
 	}

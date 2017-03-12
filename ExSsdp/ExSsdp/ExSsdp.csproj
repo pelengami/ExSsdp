@@ -49,7 +49,6 @@
     <Compile Include="Aggregatable\AggregatableDevicePublisher.cs" />
     <Compile Include="Aggregatable\IAggregatableDeviceLocator.cs" />
     <Compile Include="Aggregatable\IAggregatableDevicePublisher.cs" />
-    <Compile Include="Aggregatable\HttpDevicePublisher.cs" />
     <Compile Include="Http\HttpAvailabilityChecker.cs" />
     <Compile Include="Http\HttpDeviceInfoPublisher.cs" />
     <Compile Include="Http\IHttpAvailabilityChecker.cs" />
