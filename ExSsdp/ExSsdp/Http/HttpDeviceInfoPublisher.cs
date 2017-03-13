@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -16,7 +17,7 @@ namespace ExSsdp.Http
 		private readonly int _port;
 		private readonly int _accepts = 4;
 		private readonly HttpListener _httpListener;
-		private readonly ConcurrentDictionary<string, string> _deviceLocationAndInfo = new ConcurrentDictionary<string, string>();
+		private readonly ConcurrentDictionary<string, string> _deviceUuidAndInfo = new ConcurrentDictionary<string, string>();
 
 		public HttpDeviceInfoPublisher(NetworkInfoProvider networkInfoProvider, int port)
 		{
@@ -29,12 +30,23 @@ namespace ExSsdp.Http
 			_accepts *= Environment.ProcessorCount;
 		}
 
-		public void AddDeviceInfo(string location, string xmlDocument)
+		public void AddDeviceInfo(string deviceUuid, string xmlDocument)
 		{
-			if (_deviceLocationAndInfo.ContainsKey(location))
+			if (_deviceUuidAndInfo.ContainsKey(deviceUuid))
 				return;
 
-			_deviceLocationAndInfo.TryAdd(location, xmlDocument);
+			//todo add log
+			_deviceUuidAndInfo.TryAdd(deviceUuid, xmlDocument);
+		}
+
+		public void RemoveDeviceInfo(string deviceUuid)
+		{
+			if (!_deviceUuidAndInfo.ContainsKey(deviceUuid))
+				return;
+
+			string tempDeviceInfo;
+			//todo add log
+			_deviceUuidAndInfo.TryRemove(deviceUuid, out tempDeviceInfo);
 		}
 
 		public void Dispose()
@@ -42,16 +54,16 @@ namespace ExSsdp.Http
 			_httpListener.Stop();
 		}
 
+		/// <exception cref="InvalidOperationException"/>
 		public void Run(CancellationToken cancellationToken)
 		{
-			foreach (var ipAddressesFromAdapter in _networkInfoProvider.GetIpAddressesFromAdapters())
-			{
-				var locationForUri = $"http://{ipAddressesFromAdapter.ToUriAddress(_port)}/upnp/description/"; ;
+			Console.WriteLine("http device info publisher, was published: ");
 
-				Console.WriteLine($"published on: {locationForUri}");
+			var locationForUri = $"http://*:{_port}/"; ;
 
-				_httpListener.Prefixes.Add(locationForUri);
-			}
+			Console.WriteLine(locationForUri);
+
+			_httpListener.Prefixes.Add(locationForUri);
 
 			try
 			{
@@ -94,9 +106,16 @@ namespace ExSsdp.Http
 				if (requestEndPoint == null)
 					return;
 
-				string deviceInfo;
+				var segments = listenerContext.Request.Url.Segments;
+				var deviceUuid = segments.LastOrDefault();
+				if (deviceUuid == default(string))
+					return;
 
-				if (!_deviceLocationAndInfo.TryGetValue(requestEndPoint.ToString(), out deviceInfo))
+				if (!_deviceUuidAndInfo.ContainsKey(deviceUuid))
+					return;
+
+				string deviceInfo;
+				if (!_deviceUuidAndInfo.TryGetValue(deviceUuid, out deviceInfo))
 					return;
 
 				byte[] data = Encoding.UTF8.GetBytes(deviceInfo);

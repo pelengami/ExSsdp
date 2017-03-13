@@ -108,9 +108,10 @@ namespace ExSsdp.Aggregatable
 
 				string ipAddressForUri = publisherLocation.ToUriAddress(_port);
 
-				var rootDeviceWithLocation = new SsdpRootDevice(new Uri("http://" + ipAddressForUri + "/upnp/description/"), ssdpRootDevice.CacheLifetime, ssdpRootDevice.ToDescriptionDocument());
+				var deviceDescriptionXml = ssdpRootDevice.ToDescriptionDocument();
+				var rootDeviceWithLocation = new SsdpRootDevice(new Uri($"http://{ipAddressForUri}/upnp/description/{ssdpRootDevice.Uuid}"), ssdpRootDevice.CacheLifetime, deviceDescriptionXml);
 
-				_httpDeviceInfoPublisher.AddDeviceInfo(ipAddressForUri, rootDeviceWithLocation.ToDescriptionDocument());
+				_httpDeviceInfoPublisher.AddDeviceInfo(rootDeviceWithLocation.Uuid, rootDeviceWithLocation.ToDescriptionDocument());
 				publisher.AddDevice(rootDeviceWithLocation);
 			}
 		}
@@ -118,7 +119,10 @@ namespace ExSsdp.Aggregatable
 		public void RemoveDevice(SsdpRootDevice ssdpRootDevice)
 		{
 			foreach (var ssdpDevicePublisher in _ssdpDevicePublishers.Values)
+			{
+				_httpDeviceInfoPublisher.RemoveDeviceInfo(ssdpRootDevice.Uuid);
 				ssdpDevicePublisher.RemoveDevice(ssdpRootDevice);
+			}
 		}
 
 		private void AddPublisher(ISsdpDevicePublisherFactory ssdpDevicePublisherFactory, IEnumerable<string> availableUnicastAddresses, int port)
