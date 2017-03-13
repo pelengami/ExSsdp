@@ -22,10 +22,9 @@ namespace ExSsdp.Util
 						//ignore
 						return;
 					}
-					catch (Exception)
+					catch (Exception ex)
 					{
-						//ignore
-						return;
+						Console.Error.WriteLine(ex);
 					}
 				}
 			});

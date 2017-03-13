@@ -1,19 +1,28 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 
 namespace ExSsdp.Http
 {
-	internal class HttpAvailabilityChecker : IHttpAvailabilityChecker
+	internal sealed class HttpAvailabilityChecker : IHttpAvailabilityChecker
 	{
-		const int RequestTimeoutMs = 500;
+		private const int RequestTimeoutMs = 1000;
 
 		public bool Check(string url)
 		{
-			var request = (HttpWebRequest)WebRequest.Create(url);
-			request.Timeout = RequestTimeoutMs;
+			try
+			{
+				var request = (HttpWebRequest)WebRequest.Create(url);
+				request.Timeout = RequestTimeoutMs;
 
-			var response = (HttpWebResponse)request.GetResponse();
+				var response = (HttpWebResponse)request.GetResponse();
 
-			return response.StatusCode != HttpStatusCode.OK;
+				return response.StatusCode == HttpStatusCode.OK;
+			}
+			catch (Exception)
+			{
+				//todo add log
+				return false;
+			}
 		}
 	}
 }
