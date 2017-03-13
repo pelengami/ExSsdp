@@ -4,12 +4,17 @@ using System.Net.Sockets;
 
 namespace ExSsdp.Util
 {
-	internal static class IpAddressExtensions
+	public static class IpAddressExtensions
 	{
+		/// <exception cref="ArgumentException"/>
 		/// <exception cref="ArgumentOutOfRangeException"/>
 		public static string ToUriAddress(this string ipAddr, int port)
 		{
-			var ipAddress = IPAddress.Parse(ipAddr);
+			IPAddress ipAddress;
+
+			if (!IPAddress.TryParse(ipAddr, out ipAddress))
+				throw new ArgumentException(nameof(ipAddress));
+
 			string location;
 
 			switch (ipAddress.AddressFamily)

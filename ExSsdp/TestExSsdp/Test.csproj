@@ -79,6 +79,7 @@
     <Compile Include="Factory\SsdpDeviceLocatorFactoryTest.cs" />
     <Compile Include="Factory\SsdpDevicePublisherFactoryTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Util\IpAddressExtensionsTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ExSsdp\ExSsdp.csproj">
