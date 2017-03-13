@@ -2,32 +2,32 @@
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ExSsdp.Network;
 using ExSsdp.Util;
 
 namespace ExSsdp.Http
 {
-	public sealed class HttpDeviceInfoPublisher
+	public sealed class HttpDeviceInfoPublisher : IHttpDeviceInfoPublisher
 	{
-		private readonly NetworkInfoProvider _networkInfoProvider;
 		private readonly int _port;
 		private readonly int _accepts = 4;
 		private readonly HttpListener _httpListener;
 		private readonly ConcurrentDictionary<string, string> _deviceUuidAndInfo = new ConcurrentDictionary<string, string>();
 
-		public HttpDeviceInfoPublisher(NetworkInfoProvider networkInfoProvider, int port)
+		public HttpDeviceInfoPublisher(int port)
 		{
-			if (networkInfoProvider == null) throw new ArgumentNullException(nameof(networkInfoProvider));
 			if (port < 0) throw new InvalidOperationException(nameof(port));
 
-			_networkInfoProvider = networkInfoProvider;
 			_port = port;
 			_httpListener = new HttpListener();
 			_accepts *= Environment.ProcessorCount;
+		}
+
+		public void Dispose()
+		{
+			_httpListener.Stop();
 		}
 
 		public void AddDeviceInfo(string deviceUuid, string xmlDocument)
@@ -47,11 +47,6 @@ namespace ExSsdp.Http
 			string tempDeviceInfo;
 			//todo add log
 			_deviceUuidAndInfo.TryRemove(deviceUuid, out tempDeviceInfo);
-		}
-
-		public void Dispose()
-		{
-			_httpListener.Stop();
 		}
 
 		/// <exception cref="InvalidOperationException"/>

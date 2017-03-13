@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using ExSsdp.Http;
 using ExSsdp.Network;
@@ -17,14 +15,14 @@ namespace ExSsdp.Aggregatable
 	{
 		private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 		private readonly Dictionary<string, ISsdpDevicePublisher> _ssdpDevicePublishers = new Dictionary<string, ISsdpDevicePublisher>();
-		private readonly HttpDeviceInfoPublisher _httpDeviceInfoPublisher;
+		private readonly IHttpDeviceInfoPublisher _httpDeviceInfoPublisher;
 		private readonly int _port;
 
 		/// <exception cref="ArgumentNullException"/>
 		/// <exception cref="InvalidOperationException"/>
 		public AggregatableDevicePublisher(INetworkInfoProvider networkInfoProvider,
 			ISsdpDevicePublisherFactory ssdpDevicePublisherFactory,
-			HttpDeviceInfoPublisher httpDeviceInfoPublisher,
+			IHttpDeviceInfoPublisher httpDeviceInfoPublisher,
 			int port)
 		{
 			if (networkInfoProvider == null) throw new ArgumentNullException(nameof(networkInfoProvider));
@@ -44,11 +42,12 @@ namespace ExSsdp.Aggregatable
 		/// <exception cref="InvalidOperationException"/>
 		public AggregatableDevicePublisher(List<string> unicastAddresses,
 		ISsdpDevicePublisherFactory ssdpDevicePublisherFactory,
-			HttpDeviceInfoPublisher httpDeviceInfoPublisher,
+			IHttpDeviceInfoPublisher httpDeviceInfoPublisher,
 			int port)
 		{
 			if (unicastAddresses == null) throw new ArgumentNullException(nameof(unicastAddresses));
 			if (ssdpDevicePublisherFactory == null) throw new ArgumentNullException(nameof(ssdpDevicePublisherFactory));
+			if (httpDeviceInfoPublisher == null) throw new ArgumentNullException(nameof(httpDeviceInfoPublisher));
 			if (port < 0) throw new InvalidOperationException(nameof(port));
 
 			_httpDeviceInfoPublisher = httpDeviceInfoPublisher;
@@ -94,13 +93,16 @@ namespace ExSsdp.Aggregatable
 		{
 			var networkInfoProvider = new NetworkInfoProvider();
 			var devicePublisherFactory = new SsdpDevicePublisherFactory();
-			var httpDevicePublisher = new HttpDeviceInfoPublisher(networkInfoProvider, port);
+			var httpDevicePublisher = new HttpDeviceInfoPublisher(port);
 
 			return new AggregatableDevicePublisher(networkInfoProvider, devicePublisherFactory, httpDevicePublisher, port);
 		}
 
 		public void AddDevice(SsdpRootDevice ssdpRootDevice)
 		{
+			if (string.IsNullOrEmpty(ssdpRootDevice.Uuid))
+				throw new InvalidOperationException();
+
 			foreach (var ssdpDevicePublisher in _ssdpDevicePublishers)
 			{
 				var publisherLocation = ssdpDevicePublisher.Key;
