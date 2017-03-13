@@ -46,27 +46,11 @@ namespace ExSsdp.Http
 		{
 			foreach (var ipAddressesFromAdapter in _networkInfoProvider.GetIpAddressesFromAdapters())
 			{
-				var ipAddress = IPAddress.Parse(ipAddressesFromAdapter);
+				var locationForUri = $"http://{ipAddressesFromAdapter.ToUriAddress(_port)}/upnp/description/"; ;
 
-				string prefix;
+				Console.WriteLine($"published on: {locationForUri}");
 
-				switch (ipAddress.AddressFamily)
-				{
-					case AddressFamily.InterNetwork:
-						prefix = $"http://{ipAddressesFromAdapter}:{_port}/upnp/description/";
-						break;
-
-					case AddressFamily.InterNetworkV6:
-						prefix = $"http://[{ipAddressesFromAdapter}]:{_port}/upnp/description/";
-						break;
-
-					default:
-						throw new ArgumentOutOfRangeException(nameof(ipAddress.AddressFamily));
-				}
-
-				Console.WriteLine($"published on: {prefix}");
-
-				_httpListener.Prefixes.Add(prefix);
+				_httpListener.Prefixes.Add(locationForUri);
 			}
 
 			try

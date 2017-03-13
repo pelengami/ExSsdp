@@ -12,23 +12,29 @@ namespace ExSsdp.Aggregatable
 	{
 		private readonly IList<ISsdpDeviceLocator> _ssdpDeviceLocators = new List<ISsdpDeviceLocator>();
 
+		/// <exception cref="ArgumentNullException"/>
+		/// <exception cref="InvalidOperationException"/>
 		public AggregatableDeviceLocator(INetworkInfoProvider networkInfoProvider,
-			ISsdpDeviceLocatorFactory ssdpDeviceLocatorFactory,
+		ISsdpDeviceLocatorFactory ssdpDeviceLocatorFactory,
 			int port)
 		{
 			if (networkInfoProvider == null) throw new ArgumentNullException(nameof(networkInfoProvider));
 			if (ssdpDeviceLocatorFactory == null) throw new ArgumentNullException(nameof(ssdpDeviceLocatorFactory));
+			if (port < 0) throw new InvalidOperationException(nameof(port));
 
 			var unicastAddresses = networkInfoProvider.GetIpAddressesFromAdapters();
 			AddLocator(ssdpDeviceLocatorFactory, unicastAddresses, port);
 		}
 
+		/// <exception cref="ArgumentNullException"/>
+		/// <exception cref="InvalidOperationException"/>
 		public AggregatableDeviceLocator(IEnumerable<string> unicastAddresses,
-			ISsdpDeviceLocatorFactory ssdpDeviceLocatorFactory,
+		ISsdpDeviceLocatorFactory ssdpDeviceLocatorFactory,
 			int port)
 		{
 			if (unicastAddresses == null) throw new ArgumentNullException(nameof(unicastAddresses));
 			if (ssdpDeviceLocatorFactory == null) throw new ArgumentNullException(nameof(ssdpDeviceLocatorFactory));
+			if (port < 0) throw new InvalidOperationException(nameof(port));
 
 			AddLocator(ssdpDeviceLocatorFactory, unicastAddresses, port);
 		}

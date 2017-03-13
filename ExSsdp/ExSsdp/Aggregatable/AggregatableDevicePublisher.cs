@@ -7,6 +7,7 @@ using System.Threading;
 using ExSsdp.Http;
 using ExSsdp.Network;
 using ExSsdp.Publisher;
+using ExSsdp.Util;
 using Rssdp;
 using Rssdp.Infrastructure;
 
@@ -19,6 +20,8 @@ namespace ExSsdp.Aggregatable
 		private readonly HttpDeviceInfoPublisher _httpDeviceInfoPublisher;
 		private readonly int _port;
 
+		/// <exception cref="ArgumentNullException"/>
+		/// <exception cref="InvalidOperationException"/>
 		public AggregatableDevicePublisher(INetworkInfoProvider networkInfoProvider,
 			ISsdpDevicePublisherFactory ssdpDevicePublisherFactory,
 			HttpDeviceInfoPublisher httpDeviceInfoPublisher,
@@ -37,8 +40,10 @@ namespace ExSsdp.Aggregatable
 			_httpDeviceInfoPublisher.Run(_cancellationTokenSource.Token);
 		}
 
+		/// <exception cref="ArgumentNullException"/>
+		/// <exception cref="InvalidOperationException"/>
 		public AggregatableDevicePublisher(List<string> unicastAddresses,
-			ISsdpDevicePublisherFactory ssdpDevicePublisherFactory,
+		ISsdpDevicePublisherFactory ssdpDevicePublisherFactory,
 			HttpDeviceInfoPublisher httpDeviceInfoPublisher,
 			int port)
 		{
@@ -64,10 +69,8 @@ namespace ExSsdp.Aggregatable
 				//todo maybe 'byebye notification' should be sent atomatically for each device 
 				//in other words need remove all pu blished devices, when Dispose has been called
 				//todo interface of publisher should be disposable
-				((SsdpDevicePublisher)ssdpDevicePublisher).Dispose();
+				//((SsdpDevicePublisher)ssdpDevicePublisher).Dispose();
 			}
-
-			_ssdpDevicePublishers.Clear();
 
 			_httpDeviceInfoPublisher.Dispose();
 		}
@@ -92,6 +95,7 @@ namespace ExSsdp.Aggregatable
 			var networkInfoProvider = new NetworkInfoProvider();
 			var devicePublisherFactory = new SsdpDevicePublisherFactory();
 			var httpDevicePublisher = new HttpDeviceInfoPublisher(networkInfoProvider, port);
+
 			return new AggregatableDevicePublisher(networkInfoProvider, devicePublisherFactory, httpDevicePublisher, port);
 		}
 
@@ -102,26 +106,11 @@ namespace ExSsdp.Aggregatable
 				var publisherLocation = ssdpDevicePublisher.Key;
 				var publisher = ssdpDevicePublisher.Value;
 
-				//TODO: change this
-				var ipAddress = IPAddress.Parse(publisherLocation);
-				string location;
-				switch (ipAddress.AddressFamily)
-				{
-					case AddressFamily.InterNetwork:
-						location = $"{publisherLocation}:{_port}";
-						break;
+				string ipAddressForUri = publisherLocation.ToUriAddress(_port);
 
-					case AddressFamily.InterNetworkV6:
-						location = $"[{publisherLocation}]:{_port}";
-						break;
+				var rootDeviceWithLocation = new SsdpRootDevice(new Uri("http://" + ipAddressForUri + "/upnp/description/"), ssdpRootDevice.CacheLifetime, ssdpRootDevice.ToDescriptionDocument());
 
-					default:
-						throw new ArgumentOutOfRangeException(nameof(ipAddress.AddressFamily));
-				}
-
-				var rootDeviceWithLocation = new SsdpRootDevice(new Uri("http://" + location + "/upnp/description/"), ssdpRootDevice.CacheLifetime, ssdpRootDevice.ToDescriptionDocument());
-
-				_httpDeviceInfoPublisher.AddDeviceInfo(location, rootDeviceWithLocation.ToDescriptionDocument());
+				_httpDeviceInfoPublisher.AddDeviceInfo(ipAddressForUri, rootDeviceWithLocation.ToDescriptionDocument());
 				publisher.AddDevice(rootDeviceWithLocation);
 			}
 		}
