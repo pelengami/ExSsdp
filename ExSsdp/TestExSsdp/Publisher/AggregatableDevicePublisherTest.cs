@@ -12,7 +12,7 @@ using Xunit;
 
 namespace TestExSsdp.Publisher
 {
-	public sealed class AggregatableSsdpDevicePublisherTest
+	public sealed class AggregatableDevicePublisherTest
 	{
 		[Fact]
 		public void Ctor_WhenFirstArgumentIsNull_ThrowArgumentNullException1()

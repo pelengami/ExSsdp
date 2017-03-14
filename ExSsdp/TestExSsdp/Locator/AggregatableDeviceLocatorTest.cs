@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ExSsdp.Aggregatable;
+using ExSsdp.Locator;
+using ExSsdp.Network;
 using Moq;
 using Rssdp;
 using Rssdp.Infrastructure;
 using Xunit;
-using ExSsdp.Locator;
-using ExSsdp.Network;
 
-namespace TestExSsdp.Aggregatable
+namespace TestExSsdp.Locator
 {
-	public class AggregatableSsdpDeviceLocatorTest
+	public class AggregatableDeviceLocatorTest
 	{
 		[Fact]
 		private void Ctor_WhenFirstArgumentIsNull_ThrowArgumentNullException1()
@@ -39,6 +39,24 @@ namespace TestExSsdp.Aggregatable
 			var devicePublisherFactory = new Mock<ISsdpDeviceLocatorFactory>();
 
 			Assert.Throws<ArgumentNullException>(() => new AggregatableDeviceLocator(unicastAddresses, devicePublisherFactory.Object, 0));
+		}
+
+		[Fact]
+		public void Ctor_WhenPortIsLessZero_ThrowArgumentException1()
+		{
+			var networkInfoProvider = new Mock<INetworkInfoProvider>();
+			var locatorFactory = new Mock<ISsdpDeviceLocatorFactory>();
+
+			Assert.Throws<ArgumentException>(() => new AggregatableDeviceLocator(networkInfoProvider.Object, locatorFactory.Object, -1));
+		}
+
+		[Fact]
+		public void Ctor_WhenPortIsLessZero_ThrowArgumentException2()
+		{
+			var unicastAddresses = new List<string>();
+			var locatorFactory = new Mock<ISsdpDeviceLocatorFactory>();
+
+			Assert.Throws<ArgumentException>(() => new AggregatableDeviceLocator(unicastAddresses, locatorFactory.Object, -1));
 		}
 
 		[Fact]
@@ -209,6 +227,7 @@ namespace TestExSsdp.Aggregatable
 			deviceLocatorFirstMock.Verify(p => p.StopListeningForNotifications());
 			deviceLocatorSecondMock.Verify(p => p.StopListeningForNotifications());
 
+			//todo dispose
 			//deviceLocatorFirstMock.Verify(p => p.Dispose());
 			//deviceLocatorSecondMock.Verify(p => p.Dispose());
 		}

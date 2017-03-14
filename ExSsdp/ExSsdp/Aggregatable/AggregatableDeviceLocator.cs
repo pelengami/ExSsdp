@@ -20,28 +20,28 @@ namespace ExSsdp.Aggregatable
 		private CancellationTokenSource _httpAvailabilyTokenSource = new CancellationTokenSource();
 
 		/// <exception cref="ArgumentNullException"/>
-		/// <exception cref="InvalidOperationException"/>
+		/// <exception cref="ArgumentException"/>
 		public AggregatableDeviceLocator(INetworkInfoProvider networkInfoProvider,
-		ISsdpDeviceLocatorFactory ssdpDeviceLocatorFactory,
+			ISsdpDeviceLocatorFactory ssdpDeviceLocatorFactory,
 			int port)
 		{
 			if (networkInfoProvider == null) throw new ArgumentNullException(nameof(networkInfoProvider));
 			if (ssdpDeviceLocatorFactory == null) throw new ArgumentNullException(nameof(ssdpDeviceLocatorFactory));
-			if (port < 0) throw new InvalidOperationException(nameof(port));
+			if (port < 0) throw new ArgumentException(nameof(port));
 
 			var unicastAddresses = networkInfoProvider.GetIpAddressesFromAdapters();
 			AddLocator(ssdpDeviceLocatorFactory, unicastAddresses, port);
 		}
 
 		/// <exception cref="ArgumentNullException"/>
-		/// <exception cref="InvalidOperationException"/>
+		/// <exception cref="ArgumentException"/>
 		public AggregatableDeviceLocator(IEnumerable<string> unicastAddresses,
-		ISsdpDeviceLocatorFactory ssdpDeviceLocatorFactory,
+			ISsdpDeviceLocatorFactory ssdpDeviceLocatorFactory,
 			int port)
 		{
 			if (unicastAddresses == null) throw new ArgumentNullException(nameof(unicastAddresses));
 			if (ssdpDeviceLocatorFactory == null) throw new ArgumentNullException(nameof(ssdpDeviceLocatorFactory));
-			if (port < 0) throw new InvalidOperationException(nameof(port));
+			if (port < 0) throw new ArgumentException(nameof(port));
 
 			AddLocator(ssdpDeviceLocatorFactory, unicastAddresses, port);
 		}
