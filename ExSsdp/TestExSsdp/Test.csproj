@@ -75,7 +75,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="Aggregatable\AggregatableSsdpDeviceLocatorTest.cs" />
-    <Compile Include="Aggregatable\AggregatableSsdpDevicePublisherTest.cs" />
+    <Compile Include="Publisher\AggregatableSsdpDevicePublisherTest.cs" />
     <Compile Include="Factory\SsdpDeviceLocatorFactoryTest.cs" />
     <Compile Include="Factory\SsdpDevicePublisherFactoryTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -19,7 +19,7 @@ namespace ExSsdp.Aggregatable
 		private readonly int _port;
 
 		/// <exception cref="ArgumentNullException"/>
-		/// <exception cref="InvalidOperationException"/>
+		/// <exception cref="ArgumentException"/>
 		public AggregatableDevicePublisher(INetworkInfoProvider networkInfoProvider,
 			ISsdpDevicePublisherFactory ssdpDevicePublisherFactory,
 			IHttpDeviceInfoPublisher httpDeviceInfoPublisher,
@@ -28,7 +28,7 @@ namespace ExSsdp.Aggregatable
 			if (networkInfoProvider == null) throw new ArgumentNullException(nameof(networkInfoProvider));
 			if (ssdpDevicePublisherFactory == null) throw new ArgumentNullException(nameof(ssdpDevicePublisherFactory));
 			if (httpDeviceInfoPublisher == null) throw new ArgumentNullException(nameof(httpDeviceInfoPublisher));
-			if (port < 0) throw new InvalidOperationException(nameof(port));
+			if (port < 0) throw new ArgumentException(nameof(port));
 
 			_httpDeviceInfoPublisher = httpDeviceInfoPublisher;
 			_port = port;
@@ -39,7 +39,7 @@ namespace ExSsdp.Aggregatable
 		}
 
 		/// <exception cref="ArgumentNullException"/>
-		/// <exception cref="InvalidOperationException"/>
+		/// <exception cref="ArgumentException"/>
 		public AggregatableDevicePublisher(List<string> unicastAddresses,
 		ISsdpDevicePublisherFactory ssdpDevicePublisherFactory,
 			IHttpDeviceInfoPublisher httpDeviceInfoPublisher,
@@ -48,7 +48,7 @@ namespace ExSsdp.Aggregatable
 			if (unicastAddresses == null) throw new ArgumentNullException(nameof(unicastAddresses));
 			if (ssdpDevicePublisherFactory == null) throw new ArgumentNullException(nameof(ssdpDevicePublisherFactory));
 			if (httpDeviceInfoPublisher == null) throw new ArgumentNullException(nameof(httpDeviceInfoPublisher));
-			if (port < 0) throw new InvalidOperationException(nameof(port));
+			if (port < 0) throw new ArgumentException(nameof(port));
 
 			_httpDeviceInfoPublisher = httpDeviceInfoPublisher;
 			_port = port;
@@ -89,6 +89,8 @@ namespace ExSsdp.Aggregatable
 			}
 		}
 
+		/// <exception cref="ArgumentNullException"></exception>
+		/// <exception cref="ArgumentException"></exception>
 		public static AggregatableDevicePublisher Create(int port = 0)
 		{
 			var networkInfoProvider = new NetworkInfoProvider();
@@ -98,10 +100,11 @@ namespace ExSsdp.Aggregatable
 			return new AggregatableDevicePublisher(networkInfoProvider, devicePublisherFactory, httpDevicePublisher, port);
 		}
 
+		/// <exception cref="ArgumentException"></exception>
 		public void AddDevice(SsdpRootDevice ssdpRootDevice)
 		{
 			if (string.IsNullOrEmpty(ssdpRootDevice.Uuid))
-				throw new InvalidOperationException();
+				throw new ArgumentException(nameof(ssdpRootDevice.Uuid));
 
 			foreach (var ssdpDevicePublisher in _ssdpDevicePublishers)
 			{

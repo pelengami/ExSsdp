@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ExSsdp;
 using ExSsdp.Aggregatable;
 using ExSsdp.Http;
 using ExSsdp.Network;
@@ -11,9 +10,9 @@ using Rssdp;
 using Rssdp.Infrastructure;
 using Xunit;
 
-namespace TestExSsdp.Aggregatable
+namespace TestExSsdp.Publisher
 {
-	public class AggregatableSsdpDevicePublisherTest
+	public sealed class AggregatableSsdpDevicePublisherTest
 	{
 		[Fact]
 		public void Ctor_WhenFirstArgumentIsNull_ThrowArgumentNullException1()
@@ -73,6 +72,26 @@ namespace TestExSsdp.Aggregatable
 			IHttpDeviceInfoPublisher httpDeviceInfoPublisher = null;
 
 			Assert.Throws<ArgumentNullException>(() => new AggregatableDevicePublisher(unicastAddresses, ssdpDevicePublisherFactory.Object, httpDeviceInfoPublisher, 0));
+		}
+
+		[Fact]
+		public void Ctor_WhenPortIsLessZero_ThrowArgumentException1()
+		{
+			var networkInfoProvider = new Mock<INetworkInfoProvider>();
+			var ssdpDevicePublisherFactory = new Mock<ISsdpDevicePublisherFactory>();
+			var httpDeviceInfoPublisherMock = new Mock<IHttpDeviceInfoPublisher>();
+
+			Assert.Throws<ArgumentException>(() => new AggregatableDevicePublisher(networkInfoProvider.Object, ssdpDevicePublisherFactory.Object, httpDeviceInfoPublisherMock.Object, -1));
+		}
+
+		[Fact]
+		public void Ctor_WhenPortIsLessZero_ThrowArgumentException2()
+		{
+			var unicastAddresses = new List<string>();
+			var ssdpDevicePublisherFactory = new Mock<ISsdpDevicePublisherFactory>();
+			var httpDeviceInfoPublisherMock = new Mock<IHttpDeviceInfoPublisher>();
+
+			Assert.Throws<ArgumentException>(() => new AggregatableDevicePublisher(unicastAddresses, ssdpDevicePublisherFactory.Object, httpDeviceInfoPublisherMock.Object, -1));
 		}
 
 		[Fact]
@@ -278,6 +297,31 @@ namespace TestExSsdp.Aggregatable
 
 			//# Assert
 			Assert.Equal(2, aggregatablePublisher.Devices.Count());
+		}
+
+		[Fact]
+		public void Device_WhenUuidIsNotSet_ThrowsArgumentException()
+		{
+			//# Arrange
+			var networkInfoProviderMock = new Mock<INetworkInfoProvider>();
+			networkInfoProviderMock.Setup(n => n.GetIpAddressesFromAdapters()).Returns(new List<string>
+			{
+				"127.0.0.1",
+				"::1"
+			});
+			var httpDeviceInfoPublisherMock = new Mock<IHttpDeviceInfoPublisher>();
+
+			var ssdpRootDevice = new SsdpRootDevice()
+			{
+				Uuid = string.Empty
+			};
+
+			var ssdpDevicePublisherFactoryMock = new Mock<ISsdpDevicePublisherFactory>();
+
+			var aggregatablePublisher = new AggregatableDevicePublisher(networkInfoProviderMock.Object, ssdpDevicePublisherFactoryMock.Object, httpDeviceInfoPublisherMock.Object, 0);
+
+			//# Assert
+			Assert.Throws<ArgumentException>(() => aggregatablePublisher.AddDevice(ssdpRootDevice));
 		}
 
 		[Fact]
