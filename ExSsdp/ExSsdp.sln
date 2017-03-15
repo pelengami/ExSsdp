@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExSsdp", "ExSsdp\ExSsdp.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "TestExSsdp\Test.csproj", "{EC7C81C8-75A3-4083-B839-E8E4B1FA18F0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example", "Example\Example.csproj", "{B7787507-2FAB-406B-ADCE-A6CD82665733}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{EC7C81C8-75A3-4083-B839-E8E4B1FA18F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EC7C81C8-75A3-4083-B839-E8E4B1FA18F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EC7C81C8-75A3-4083-B839-E8E4B1FA18F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7787507-2FAB-406B-ADCE-A6CD82665733}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7787507-2FAB-406B-ADCE-A6CD82665733}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7787507-2FAB-406B-ADCE-A6CD82665733}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7787507-2FAB-406B-ADCE-A6CD82665733}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

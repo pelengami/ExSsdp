@@ -72,13 +72,28 @@ namespace ExSsdp.Aggregatable
 
 		public bool CheckDevicesForAvailable { get; set; }
 
+		public static AggregatableDeviceLocator Create(int port = 0)
+		{
+			var networkInfoProvider = new NetworkInfoProvider();
+			var locatorFactory = new SsdpDeviceLocatorFactory();
+			var deviceLocator = new AggregatableDeviceLocator(networkInfoProvider, locatorFactory, port);
+			return deviceLocator;
+		}
+
 		public async Task<IEnumerable<DiscoveredSsdpDevice>> SearchAsync()
 		{
 			var allDevices = new List<DiscoveredSsdpDevice>();
 			foreach (var ssdpDeviceLocator in _ssdpDeviceLocators)
 			{
-				var devices = await ssdpDeviceLocator.SearchAsync();
-				allDevices.AddRange(devices);
+				try
+				{
+					var devices = await ssdpDeviceLocator.SearchAsync();
+					allDevices.AddRange(devices);
+				}
+				catch (Exception ex)
+				{
+					Console.Error.WriteLine(ex);
+				}
 			}
 			return allDevices;
 		}
