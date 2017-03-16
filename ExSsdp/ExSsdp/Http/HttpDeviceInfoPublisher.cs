@@ -16,9 +16,10 @@ namespace ExSsdp.Http
 		private readonly HttpListener _httpListener;
 		private readonly ConcurrentDictionary<string, string> _deviceUuidAndInfo = new ConcurrentDictionary<string, string>();
 
+		/// <exception cref="ArgumentOutOfRangeException"/>
 		public HttpDeviceInfoPublisher(int port)
 		{
-			if (port < 0) throw new InvalidOperationException(nameof(port));
+			if (port < 0) throw new ArgumentOutOfRangeException(nameof(port));
 
 			_port = port;
 			_httpListener = new HttpListener();
