@@ -46,7 +46,6 @@ namespace ExSsdp.Http
 				return;
 
 			string tempDeviceInfo;
-			//todo add log
 			_deviceUuidAndInfo.TryRemove(deviceUuid, out tempDeviceInfo);
 		}
 
@@ -131,7 +130,6 @@ namespace ExSsdp.Http
 			}
 			catch (Exception ex)
 			{
-				//todo write to log
 				Console.Error.WriteLine(ex.Message);
 			}
 		}

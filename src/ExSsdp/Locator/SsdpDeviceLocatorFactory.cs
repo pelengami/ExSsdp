@@ -6,10 +6,12 @@ namespace ExSsdp.Locator
 {
 	public sealed class SsdpDeviceLocatorFactory : ISsdpDeviceLocatorFactory
 	{
+		/// <exception cref="ArgumentException"/>
+		/// <exception cref="ArgumentOutOfRangeException"/>
 		public ISsdpDeviceLocator Create(string ipAddress, int port)
 		{
-			if (string.IsNullOrEmpty(ipAddress)) throw new InvalidOperationException(nameof(ipAddress));
-			if (port < 0) throw new InvalidOperationException(nameof(port));
+			if (string.IsNullOrEmpty(ipAddress)) throw new ArgumentException(ipAddress);
+			if (port < 0) throw new ArgumentOutOfRangeException(nameof(port));
 
 			var socketFactory = new SocketFactory(ipAddress);
 			var ssdpCommunicationsServer = new SsdpCommunicationsServer(socketFactory, port);

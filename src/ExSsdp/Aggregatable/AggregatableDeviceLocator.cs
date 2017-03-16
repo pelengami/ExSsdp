@@ -20,14 +20,14 @@ namespace ExSsdp.Aggregatable
 		private CancellationTokenSource _httpAvailabilyTokenSource = new CancellationTokenSource();
 
 		/// <exception cref="ArgumentNullException"/>
-		/// <exception cref="ArgumentException"/>
+		/// <exception cref="ArgumentOutOfRangeException"/>
 		public AggregatableDeviceLocator(INetworkInfoProvider networkInfoProvider,
 			ISsdpDeviceLocatorFactory ssdpDeviceLocatorFactory,
 			int port)
 		{
 			if (networkInfoProvider == null) throw new ArgumentNullException(nameof(networkInfoProvider));
 			if (ssdpDeviceLocatorFactory == null) throw new ArgumentNullException(nameof(ssdpDeviceLocatorFactory));
-			if (port < 0) throw new ArgumentException(nameof(port));
+			if (port < 0) throw new ArgumentOutOfRangeException(nameof(port));
 
 			var unicastAddresses = networkInfoProvider.GetIpAddressesFromAdapters();
 			AddLocator(ssdpDeviceLocatorFactory, unicastAddresses, port);

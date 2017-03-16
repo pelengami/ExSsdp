@@ -19,7 +19,7 @@ namespace ExSsdp.Aggregatable
 		private readonly int _port;
 
 		/// <exception cref="ArgumentNullException"/>
-		/// <exception cref="ArgumentException"/>
+		/// <exception cref="ArgumentOutOfRangeException"/>
 		public AggregatableDevicePublisher(INetworkInfoProvider networkInfoProvider,
 			ISsdpDevicePublisherFactory ssdpDevicePublisherFactory,
 			IHttpDeviceInfoPublisher httpDeviceInfoPublisher,
@@ -28,7 +28,7 @@ namespace ExSsdp.Aggregatable
 			if (networkInfoProvider == null) throw new ArgumentNullException(nameof(networkInfoProvider));
 			if (ssdpDevicePublisherFactory == null) throw new ArgumentNullException(nameof(ssdpDevicePublisherFactory));
 			if (httpDeviceInfoPublisher == null) throw new ArgumentNullException(nameof(httpDeviceInfoPublisher));
-			if (port < 0) throw new ArgumentException(nameof(port));
+			if (port < 0) throw new ArgumentOutOfRangeException(nameof(port));
 
 			_httpDeviceInfoPublisher = httpDeviceInfoPublisher;
 			_port = port;

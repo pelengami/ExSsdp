@@ -18,9 +18,9 @@ namespace ExSsdp.Http
 
 				return response.StatusCode == HttpStatusCode.OK;
 			}
-			catch (Exception)
+			catch (Exception ex)
 			{
-				//todo add log
+				Console.Error.WriteLine(ex);
 				return false;
 			}
 		}

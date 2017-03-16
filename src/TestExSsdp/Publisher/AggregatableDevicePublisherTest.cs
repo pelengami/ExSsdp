@@ -75,13 +75,13 @@ namespace TestExSsdp.Publisher
 		}
 
 		[Fact]
-		public void Ctor_WhenPortIsLessZero_ThrowArgumentException1()
+		public void Ctor_WhenPortIsLessZero_ThrowArgumentOutOfRangeException()
 		{
 			var networkInfoProvider = new Mock<INetworkInfoProvider>();
 			var ssdpDevicePublisherFactory = new Mock<ISsdpDevicePublisherFactory>();
 			var httpDeviceInfoPublisherMock = new Mock<IHttpDeviceInfoPublisher>();
 
-			Assert.Throws<ArgumentException>(() => new AggregatableDevicePublisher(networkInfoProvider.Object, ssdpDevicePublisherFactory.Object, httpDeviceInfoPublisherMock.Object, -1));
+			Assert.Throws<ArgumentOutOfRangeException>(() => new AggregatableDevicePublisher(networkInfoProvider.Object, ssdpDevicePublisherFactory.Object, httpDeviceInfoPublisherMock.Object, -1));
 		}
 
 		[Fact]

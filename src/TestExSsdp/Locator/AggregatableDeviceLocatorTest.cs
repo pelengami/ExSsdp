@@ -42,12 +42,12 @@ namespace TestExSsdp.Locator
 		}
 
 		[Fact]
-		public void Ctor_WhenPortIsLessZero_ThrowArgumentException1()
+		public void Ctor_WhenPortIsLessZero_ThrowArgumentOutOfRangeException()
 		{
 			var networkInfoProvider = new Mock<INetworkInfoProvider>();
 			var locatorFactory = new Mock<ISsdpDeviceLocatorFactory>();
 
-			Assert.Throws<ArgumentException>(() => new AggregatableDeviceLocator(networkInfoProvider.Object, locatorFactory.Object, -1));
+			Assert.Throws<ArgumentOutOfRangeException>(() => new AggregatableDeviceLocator(networkInfoProvider.Object, locatorFactory.Object, -1));
 		}
 
 		[Fact]
