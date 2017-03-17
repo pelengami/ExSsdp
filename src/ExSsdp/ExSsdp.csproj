@@ -97,6 +97,8 @@
     <Compile Include="Locator\SsdpDeviceLocatorFactory.cs" />
     <Compile Include="Publisher\SsdpDevicePublisherFactory.cs" />
     <Compile Include="Util\IpAddressExtensions.cs" />
+    <Compile Include="Util\UdpPortChecker.cs" />
+    <Compile Include="Util\WaitHandleExtensions.cs" />
     <Compile Include="Util\ThreadUtil.cs" />
     <Compile Include="Util\Repeater.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

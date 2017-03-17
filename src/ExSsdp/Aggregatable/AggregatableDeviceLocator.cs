@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ExSsdp.Locator;
 using ExSsdp.Monitoring;
 using ExSsdp.Network;
+using ExSsdp.Util;
 using Rssdp;
 using Rssdp.Infrastructure;
 
@@ -53,11 +54,29 @@ namespace ExSsdp.Aggregatable
 
 		public bool IsMonitoringEnabled { get; set; }
 
-		public static AggregatableDeviceLocator Create(int port = 0)
+	    /// <exception cref="ArgumentNullException"/>
+	    /// <exception cref="ArgumentOutOfRangeException"/>
+	    public static AggregatableDeviceLocator Create(int port = 0)
 		{
 			var networkInfoProvider = new NetworkInfoProvider();
 			var locatorFactory = new SsdpDeviceLocatorFactory();
 			var deviceLocator = new AggregatableDeviceLocator(networkInfoProvider, locatorFactory, port);
+            return deviceLocator;
+        }
+
+        /// <exception cref="InvalidOperationException"></exception>
+	    /// <exception cref="ArgumentNullException"/>
+	    /// <exception cref="ArgumentOutOfRangeException"/>
+	    public static AggregatableDeviceLocator Create()
+		{
+		    int availablePort;
+		    if (!UdpPortChecker.TryGetFirstAvailableUdpPort(out availablePort))
+		        throw new InvalidOperationException();
+
+            var networkInfoProvider = new NetworkInfoProvider();
+			var locatorFactory = new SsdpDeviceLocatorFactory();
+			var deviceLocator = new AggregatableDeviceLocator(networkInfoProvider, locatorFactory, availablePort);
+
 			return deviceLocator;
 		}
 

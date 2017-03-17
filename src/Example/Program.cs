@@ -26,15 +26,15 @@ namespace Example
 				ProcessCommand(key.KeyChar.ToString().ToLowerInvariant());
 			}
 
-			Console.ReadKey();
-
-			Console.WriteLine("exit");
+            _devicePublisher?.Dispose();
+		    _deviceNotificationListener?.Dispose();
+		    _deviceSeacher?.Dispose();
 		}
 
 		private static void PublishDevice()
 		{
 			_devicePublisher?.Dispose();
-			_devicePublisher = AggregatableDevicePublisher.Create(3333);
+			_devicePublisher = AggregatableDevicePublisher.Create();
 
 			var ssdpDevice = CreateSsdpDevice();
 			_devicePublisher.AddDevice(ssdpDevice);
@@ -43,7 +43,7 @@ namespace Example
 		private static async void SearchDevices()
 		{
 			_deviceSeacher?.Dispose();
-			_deviceSeacher = AggregatableDeviceLocator.Create(5554);
+			_deviceSeacher = AggregatableDeviceLocator.Create();
 
 			Console.WriteLine("Wait please");
 
@@ -63,7 +63,7 @@ namespace Example
 		{
 			_deviceNotificationListener?.Dispose();
 
-			_deviceNotificationListener = AggregatableDeviceLocator.Create(5555);
+			_deviceNotificationListener = AggregatableDeviceLocator.Create();
 
 			_deviceNotificationListener.IsMonitoringEnabled = true;
 

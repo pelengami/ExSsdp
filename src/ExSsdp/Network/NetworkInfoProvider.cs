@@ -26,7 +26,7 @@ namespace ExSsdp.Network
 					continue;
 
 				var unciastAddress = GetAnyUnicastAddress(networkInterface, AddressFamily.InterNetwork);
-				if (!unciastAddress.Equals(default(IPAddress)))
+				if (unciastAddress != null)
 					yield return unciastAddress.ToString();
 
 				unciastAddress = GetAnyUnicastAddress(networkInterface, AddressFamily.InterNetworkV6);

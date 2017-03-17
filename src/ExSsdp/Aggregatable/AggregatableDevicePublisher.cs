@@ -73,8 +73,9 @@ namespace ExSsdp.Aggregatable
 			}
 		}
 
-		/// <exception cref="ArgumentNullException"></exception>
-		/// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentOutOfRangeException"/>
 		public static AggregatableDevicePublisher Create(int port = 0)
 		{
 			var networkInfoProvider = new NetworkInfoProvider();
@@ -83,6 +84,22 @@ namespace ExSsdp.Aggregatable
 
 			return new AggregatableDevicePublisher(networkInfoProvider, devicePublisherFactory, httpDevicePublisher, port);
 		}
+
+        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="ArgumentNullException"/>
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        public static AggregatableDevicePublisher Create()
+	    {
+	        int availablePort;
+            if (!UdpPortChecker.TryGetFirstAvailableUdpPort(out availablePort))
+                throw new InvalidOperationException();
+
+	        var networkInfoProvider = new NetworkInfoProvider();
+	        var devicePublisherFactory = new SsdpDevicePublisherFactory();
+	        var httpDevicePublisher = new HttpDeviceInfoPublisher(availablePort);
+
+	        return new AggregatableDevicePublisher(networkInfoProvider, devicePublisherFactory, httpDevicePublisher, availablePort);
+        }
 
 		/// <exception cref="ArgumentException"></exception>
 		public void AddDevice(SsdpRootDevice ssdpRootDevice)
@@ -122,9 +139,9 @@ namespace ExSsdp.Aggregatable
 			foreach (var ssdpDevicePublisher in _ssdpDevicePublishers.Values)
 			{
 				//todo maybe 'byebye notification' should be sent atomatically for each device 
-				//in other words need remove all pu blished devices, when Dispose has been called
+				//in other words need remove all published devices, when Dispose has been called
 				//todo interface of publisher should be disposable
-				//((SsdpDevicePublisher)ssdpDevicePublisher).Dispose();
+				((SsdpDevicePublisher)ssdpDevicePublisher).Dispose();
 			}
 
 			_httpDeviceInfoPublisher.Dispose();
