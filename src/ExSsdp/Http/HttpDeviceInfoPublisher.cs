@@ -9,129 +9,126 @@ using ExSsdp.Util;
 
 namespace ExSsdp.Http
 {
-	public sealed class HttpDeviceInfoPublisher : IHttpDeviceInfoPublisher
-	{
-		private readonly int _port;
-		private readonly int _accepts = 4;
-		private readonly HttpListener _httpListener;
-		private readonly ConcurrentDictionary<string, string> _deviceUuidAndInfo = new ConcurrentDictionary<string, string>();
+    public sealed class HttpDeviceInfoPublisher : IHttpDeviceInfoPublisher
+    {
+        private readonly int _port;
+        private readonly int _accepts = 4;
+        private readonly HttpListener _httpListener;
+        private readonly ConcurrentDictionary<string, string> _deviceUuidAndInfo = new ConcurrentDictionary<string, string>();
 
-		/// <exception cref="ArgumentOutOfRangeException"/>
-		public HttpDeviceInfoPublisher(int port)
-		{
-			if (port < 0) throw new ArgumentOutOfRangeException(nameof(port));
+        /// <exception cref="ArgumentOutOfRangeException"/>
+        public HttpDeviceInfoPublisher(int port)
+        {
+            if (port < 0) throw new ArgumentOutOfRangeException(nameof(port));
 
-			_port = port;
-			_httpListener = new HttpListener();
-			_accepts *= Environment.ProcessorCount;
-		}
+            _port = port;
+            _httpListener = new HttpListener();
+            _accepts *= Environment.ProcessorCount;
+        }
 
-		public void AddDeviceInfo(string deviceUuid, string xmlDocument)
-		{
-			if (_deviceUuidAndInfo.ContainsKey(deviceUuid))
-				return;
+        public void AddDeviceInfo(string deviceUuid, string xmlDocument)
+        {
+            if (_deviceUuidAndInfo.ContainsKey(deviceUuid))
+                return;
 
-			//todo add log
-			_deviceUuidAndInfo.TryAdd(deviceUuid, xmlDocument);
-		}
+            //todo add log
+            _deviceUuidAndInfo.TryAdd(deviceUuid, xmlDocument);
+        }
 
-		public void RemoveDeviceInfo(string deviceUuid)
-		{
-			if (!_deviceUuidAndInfo.ContainsKey(deviceUuid))
-				return;
+        public void RemoveDeviceInfo(string deviceUuid)
+        {
+            if (!_deviceUuidAndInfo.ContainsKey(deviceUuid))
+                return;
 
-			string tempDeviceInfo;
-			_deviceUuidAndInfo.TryRemove(deviceUuid, out tempDeviceInfo);
-		}
+            string tempDeviceInfo;
+            _deviceUuidAndInfo.TryRemove(deviceUuid, out tempDeviceInfo);
+        }
 
-		/// <exception cref="InvalidOperationException"/>
-		public void Run(CancellationToken cancellationToken)
-		{
-			Console.WriteLine("http device info publisher, was published: ");
+        /// <exception cref="InvalidOperationException"/>
+        public void Run(CancellationToken cancellationToken)
+        {
+            Console.WriteLine("Was published: ");
 
-			var locationForUri = $"http://*:{_port}/"; ;
+            var locationForUri = $"http://*:{_port}/"; ;
 
-			Console.WriteLine(locationForUri);
+            Console.WriteLine(locationForUri);
 
-			_httpListener.Prefixes.Add(locationForUri);
+            _httpListener.Prefixes.Add(locationForUri);
 
-			try
-			{
-				_httpListener.Start();
-			}
-			catch (HttpListenerException exception)
-			{
-				//todo write to log
-				Console.Error.WriteLine(exception.Message);
-				throw new InvalidOperationException();
-			}
+            try
+            {
+                _httpListener.Start();
+            }
+            catch (HttpListenerException exception)
+            {
+                Console.Error.WriteLine(exception.Message);
+                throw new InvalidOperationException();
+            }
 
-			var semaphore = new Semaphore(_accepts, _accepts);
+            var semaphore = new Semaphore(_accepts, _accepts);
 
-			var listenerAction = new Action(async delegate
-			{
-				try
-				{
-					semaphore.WaitOne();
+            var listenerAction = new Action(async delegate
+            {
+                try
+                {
+                    await semaphore.WaitOneAsync(cancellationToken);
+                    var context = await _httpListener.GetContextAsync();
+                    semaphore.Release();
+                    await ProcessListenerContextAsync(context, cancellationToken);
+                }
+                catch (Exception)
+                {
+                    //ignore
+                }
+            });
 
-					var context = await _httpListener.GetContextAsync();
+            Repeater.DoInfinityAsync(listenerAction, TimeSpan.FromMilliseconds(150), cancellationToken);
+        }
 
-					semaphore.Release();
-					await ProcessListenerContextAsync(context);
-				}
-				catch (Exception)
-				{
-					//ignore
-				}
-			});
+        public void Dispose()
+        {
+            _httpListener.Stop();
+        }
 
-			Repeater.DoInfinityAsync(listenerAction, TimeSpan.Zero, cancellationToken);
-		}
+        private async Task ProcessListenerContextAsync(HttpListenerContext listenerContext, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var requestEndPoint = listenerContext.Request.LocalEndPoint;
+                if (requestEndPoint == null)
+                    return;
 
-		public void Dispose()
-		{
-			_httpListener.Stop();
-		}
+                var segments = listenerContext.Request.Url.Segments;
+                var deviceUuid = segments.LastOrDefault();
+                if (deviceUuid == default(string))
+                    return;
 
-		private async Task ProcessListenerContextAsync(HttpListenerContext listenerContext)
-		{
-			try
-			{
-				var requestEndPoint = listenerContext.Request.LocalEndPoint;
-				if (requestEndPoint == null)
-					return;
+                if (!_deviceUuidAndInfo.ContainsKey(deviceUuid))
+                    return;
 
-				var segments = listenerContext.Request.Url.Segments;
-				var deviceUuid = segments.LastOrDefault();
-				if (deviceUuid == default(string))
-					return;
+                string deviceInfo;
+                if (!_deviceUuidAndInfo.TryGetValue(deviceUuid, out deviceInfo))
+                    return;
 
-				if (!_deviceUuidAndInfo.ContainsKey(deviceUuid))
-					return;
+                byte[] data = Encoding.UTF8.GetBytes(deviceInfo);
 
-				string deviceInfo;
-				if (!_deviceUuidAndInfo.TryGetValue(deviceUuid, out deviceInfo))
-					return;
+                listenerContext.Response.StatusCode = 200;
+                listenerContext.Response.KeepAlive = false;
+                listenerContext.Response.ContentLength64 = data.Length;
 
-				byte[] data = Encoding.UTF8.GetBytes(deviceInfo);
+                var output = listenerContext.Response.OutputStream;
+                await output.WriteAsync(data, 0, data.Length, cancellationToken);
 
-				listenerContext.Response.StatusCode = 200;
-				listenerContext.Response.KeepAlive = false;
-				listenerContext.Response.ContentLength64 = data.Length;
-
-				var output = listenerContext.Response.OutputStream;
-				await output.WriteAsync(data, 0, data.Length);
-
-				listenerContext.Response.Close();
-			}
-			catch (HttpListenerException)
-			{
-				// Ignored.
-			}
-			catch (Exception ex)
-			{
-				Console.Error.WriteLine(ex.Message);
-			}
-		}
-	}
+                listenerContext.Response.Close();
+            }
+            catch (HttpListenerException)
+            {
+                // Ignored.
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex.Message);
+            }
+        }
+    }
 }

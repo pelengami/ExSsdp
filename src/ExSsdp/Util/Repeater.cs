@@ -20,6 +20,7 @@ namespace ExSsdp.Util
 					catch (TaskCanceledException)
 					{
 						//ignore
+					    await Task.Delay(100);
 						return;
 					}
 					catch (Exception ex)
