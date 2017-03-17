@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
-using ExSsdp.Http;
 using ExSsdp.Locator;
+using ExSsdp.Monitoring;
 using ExSsdp.Network;
-using ExSsdp.Util;
 using Rssdp;
 using Rssdp.Infrastructure;
 
@@ -15,9 +12,7 @@ namespace ExSsdp.Aggregatable
 	public sealed class AggregatableDeviceLocator : IAggregatableDeviceLocator
 	{
 		private readonly IList<ISsdpDeviceLocator> _ssdpDeviceLocators = new List<ISsdpDeviceLocator>();
-		private readonly ConcurrentDictionary<string, DiscoveredSsdpDevice> _discoveredSsdpDevices = new ConcurrentDictionary<string, DiscoveredSsdpDevice>();
-		private readonly HttpAvailabilityChecker _availabilityChecker = new HttpAvailabilityChecker();
-		private CancellationTokenSource _httpAvailabilyTokenSource = new CancellationTokenSource();
+		private readonly DeviceMonitoring _deviceMonitoring = new DeviceMonitoring();
 
 		/// <exception cref="ArgumentNullException"/>
 		/// <exception cref="ArgumentOutOfRangeException"/>
@@ -31,6 +26,8 @@ namespace ExSsdp.Aggregatable
 
 			var unicastAddresses = networkInfoProvider.GetIpAddressesFromAdapters();
 			AddLocator(ssdpDeviceLocatorFactory, unicastAddresses, port);
+
+			_deviceMonitoring.DeviceUnvailable += OnMonitoringDeviceUnvailable;
 		}
 
 		/// <exception cref="ArgumentNullException"/>
@@ -44,33 +41,17 @@ namespace ExSsdp.Aggregatable
 			if (port < 0) throw new ArgumentException(nameof(port));
 
 			AddLocator(ssdpDeviceLocatorFactory, unicastAddresses, port);
-		}
 
-		public void Dispose()
-		{
-			foreach (var ssdpDeviceLocator in _ssdpDeviceLocators)
-			{
-				ssdpDeviceLocator.DeviceAvailable -= OnDeviceAvailable;
-				ssdpDeviceLocator.DeviceUnavailable -= OnDeviceUnavailable;
-				ssdpDeviceLocator.StopListeningForNotifications();
-
-				//todo interface of locator should be idisposable
-				//ssdpDeviceLocator.Dispose();
-			}
-
-			if (!_httpAvailabilyTokenSource.IsCancellationRequested)
-				_httpAvailabilyTokenSource.Cancel();
+			_deviceMonitoring.DeviceUnvailable += OnMonitoringDeviceUnvailable;
 		}
 
 		public event EventHandler<DeviceAvailableEventArgs> DeviceAvailable;
 
 		public event EventHandler<DeviceUnavailableEventArgs> DeviceUnavailable;
 
-		public event EventHandler<DiscoveredSsdpDevice> HttpLocationDeviceUnavailable;
-
 		public IEnumerable<ISsdpDeviceLocator> Locators => _ssdpDeviceLocators;
 
-		public bool CheckDevicesForAvailable { get; set; }
+		public bool IsMonitoringEnabled { get; set; }
 
 		public static AggregatableDeviceLocator Create(int port = 0)
 		{
@@ -103,10 +84,8 @@ namespace ExSsdp.Aggregatable
 			foreach (var ssdpDeviceLocator in _ssdpDeviceLocators)
 				ssdpDeviceLocator.StartListeningForNotifications();
 
-			if (!CheckDevicesForAvailable)
-				return;
-
-			RunMonitoringForAvailability();
+			if (IsMonitoringEnabled)
+				_deviceMonitoring.Run();
 		}
 
 		public void StopListening()
@@ -114,7 +93,22 @@ namespace ExSsdp.Aggregatable
 			foreach (var ssdpDeviceLocator in _ssdpDeviceLocators)
 				ssdpDeviceLocator.StopListeningForNotifications();
 
-			_httpAvailabilyTokenSource.Cancel();
+			_deviceMonitoring.Stop();
+		}
+
+		public void Dispose()
+		{
+			foreach (var ssdpDeviceLocator in _ssdpDeviceLocators)
+			{
+				ssdpDeviceLocator.DeviceAvailable -= OnDeviceAvailable;
+				ssdpDeviceLocator.DeviceUnavailable -= OnDeviceUnavailable;
+				ssdpDeviceLocator.StopListeningForNotifications();
+
+				//todo interface of locator should be idisposable
+				//ssdpDeviceLocator.Dispose();
+			}
+
+			_deviceMonitoring.Dispose();
 		}
 
 		private void AddLocator(ISsdpDeviceLocatorFactory ssdpDeviceLocatorFactory, IEnumerable<string> availableUnicastAddresses, int port)
@@ -131,70 +125,27 @@ namespace ExSsdp.Aggregatable
 
 		private void OnDeviceAvailable(object sender, DeviceAvailableEventArgs deviceAvailableEventArgs)
 		{
-			AddToMonitoringIfNecessary(deviceAvailableEventArgs);
+			if (IsMonitoringEnabled && deviceAvailableEventArgs.IsNewlyDiscovered)
+				_deviceMonitoring.AddDevice(deviceAvailableEventArgs.DiscoveredDevice);
 
 			DeviceAvailable?.Invoke(this, deviceAvailableEventArgs);
 		}
 
 		private void OnDeviceUnavailable(object sender, DeviceUnavailableEventArgs deviceUnavailableEventArgs)
 		{
-			RemoveFromMonitoringIfNecessary(deviceUnavailableEventArgs);
+			if (IsMonitoringEnabled)
+				_deviceMonitoring.RemoveDevice(deviceUnavailableEventArgs.DiscoveredDevice);
 
 			DeviceUnavailable?.Invoke(this, deviceUnavailableEventArgs);
 		}
 
-		private void RunMonitoringForAvailability()
+		private void OnMonitoringDeviceUnvailable(object sender, DeviceUnavailableEventArgs deviceUnavailableEventArgs)
 		{
-			var monitoringAction = new Action(delegate
-			{
-				foreach (var discoveredSsdpDevice in _discoveredSsdpDevices)
-				{
-					var location = discoveredSsdpDevice.Key;
-					var isAvailable = _availabilityChecker.Check(location);
-					if (isAvailable)
-						continue;
+			if (IsMonitoringEnabled)
+				_deviceMonitoring.RemoveDevice(deviceUnavailableEventArgs.DiscoveredDevice);
 
-					var discoveredDevice = discoveredSsdpDevice.Value;
-
-					DiscoveredSsdpDevice tempDevice;
-					if (_discoveredSsdpDevices.TryRemove(location, out tempDevice))
-						HttpLocationDeviceUnavailable?.Invoke(this, discoveredDevice);
-				}
-			});
-
-			if (!_httpAvailabilyTokenSource.IsCancellationRequested)
-				_httpAvailabilyTokenSource.Cancel();
-
-			_httpAvailabilyTokenSource = new CancellationTokenSource();
-
-			Repeater.DoInfinityAsync(monitoringAction, TimeSpan.FromSeconds(7), _httpAvailabilyTokenSource.Token);
-		}
-
-		private void AddToMonitoringIfNecessary(DeviceAvailableEventArgs deviceAvailableEventArgs)
-		{
-			if (!CheckDevicesForAvailable)
-				return;
-
-			var discoveredSsdpDevice = deviceAvailableEventArgs.DiscoveredDevice;
-			var location = discoveredSsdpDevice.DescriptionLocation.ToString();
-
-			if (!_discoveredSsdpDevices.ContainsKey(location))
-				_discoveredSsdpDevices.TryAdd(location, discoveredSsdpDevice);
-		}
-
-		private void RemoveFromMonitoringIfNecessary(DeviceUnavailableEventArgs deviceUnavailableEventArgs)
-		{
-			if (!CheckDevicesForAvailable)
-				return;
-
-			var discoveredSsdpDevice = deviceUnavailableEventArgs.DiscoveredDevice;
-			var location = discoveredSsdpDevice.DescriptionLocation.ToString();
-
-			if (_discoveredSsdpDevices.ContainsKey(location))
-			{
-				DiscoveredSsdpDevice tempDevice;
-				_discoveredSsdpDevices.TryRemove(location, out tempDevice);
-			}
+			DeviceUnavailable?.Invoke(this, deviceUnavailableEventArgs);
 		}
 	}
 }
+

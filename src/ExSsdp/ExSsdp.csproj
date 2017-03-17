@@ -90,6 +90,7 @@
     <Compile Include="Http\IHttpAvailabilityChecker.cs" />
     <Compile Include="Http\IHttpDeviceInfoPublisher.cs" />
     <Compile Include="Locator\ISsdpDeviceLocatorFactory.cs" />
+    <Compile Include="Monitoring\DeviceMonitoring.cs" />
     <Compile Include="Publisher\ISsdpDevicePublisherFactory.cs" />
     <Compile Include="Network\INetworkInfoProvider.cs" />
     <Compile Include="Network\NetworkInfoProvider.cs" />

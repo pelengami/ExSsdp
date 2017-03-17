@@ -43,7 +43,7 @@ namespace Example
 		private static async void SearchDevices()
 		{
 			_deviceSeacher?.Dispose();
-			_deviceSeacher = AggregatableDeviceLocator.Create(4545);
+			_deviceSeacher = AggregatableDeviceLocator.Create(5554);
 
 			Console.WriteLine("Wait please");
 
@@ -64,13 +64,12 @@ namespace Example
 			_deviceNotificationListener?.Dispose();
 
 			_deviceNotificationListener = AggregatableDeviceLocator.Create(5555);
-			_deviceNotificationListener.CheckDevicesForAvailable = true;
+
+			_deviceNotificationListener.IsMonitoringEnabled = true;
 
 			_deviceNotificationListener.DeviceAvailable += OnDeviceAvailable;
 
 			_deviceNotificationListener.DeviceUnavailable += OnDeviceUnavailable;
-
-			_deviceNotificationListener.HttpLocationDeviceUnavailable += OnHttpLocationDeviceUnavailable;
 
 			_deviceNotificationListener.StartListeningForNotifications();
 		}
@@ -81,15 +80,6 @@ namespace Example
 			Console.WriteLine("Device available");
 			Console.WriteLine($"Usn: {args.DiscoveredDevice.Usn}");
 			Console.WriteLine($"Location: {args.DiscoveredDevice.DescriptionLocation}");
-			Console.ResetColor();
-		}
-
-		private static void OnHttpLocationDeviceUnavailable(object sender, DiscoveredSsdpDevice device)
-		{
-			Console.ForegroundColor = ConsoleColor.Magenta;
-			Console.WriteLine("Device unvailable, detected by location monitoring");
-			Console.WriteLine($"Usn: {device.Usn}");
-			Console.WriteLine($"Location: {device.DescriptionLocation}");
 			Console.ResetColor();
 		}
 

@@ -26,11 +26,6 @@ namespace ExSsdp.Http
 			_accepts *= Environment.ProcessorCount;
 		}
 
-		public void Dispose()
-		{
-			_httpListener.Stop();
-		}
-
 		public void AddDeviceInfo(string deviceUuid, string xmlDocument)
 		{
 			if (_deviceUuidAndInfo.ContainsKey(deviceUuid))
@@ -91,6 +86,11 @@ namespace ExSsdp.Http
 			});
 
 			Repeater.DoInfinityAsync(listenerAction, TimeSpan.Zero, cancellationToken);
+		}
+
+		public void Dispose()
+		{
+			_httpListener.Stop();
 		}
 
 		private async Task ProcessListenerContextAsync(HttpListenerContext listenerContext)
