@@ -28,31 +28,30 @@ In which cases you can use it:
 Create publisher on all adapters with any available port
 
 ```c#
-        var devicePublisher = AggregatableDevicePublisher.Create();
-        
-        devicePublisher.AddDevice(ssdpDevice);
+var devicePublisher = AggregatableDevicePublisher.Create();
+devicePublisher.AddDevice(ssdpDevice);
 ```
 
 Create publisher with specified ip addresses, or on all adapters
 
 ```c#
-       int port = 8090;
-       var unicastAddresses = new List<string> { "fe80::8c8:c972:5205:278e" };
-       var ssdpDevicePublisherFactory = new SsdpDevicePublisherFactory();
-       var httpDeviceInfoPublisher = new HttpDeviceInfoPublisher(port);
-       var devicePublisher = new AggregatableDevicePublisher(unicastAddresses, ssdpDevicePublisherFactory, httpDeviceInfoPublisher, port);
+int port = 8090;
+var unicastAddresses = new List<string> { "fe80::8c8:c972:5205:278e" };
+var ssdpDevicePublisherFactory = new SsdpDevicePublisherFactory();
+var httpDeviceInfoPublisher = new HttpDeviceInfoPublisher(port);
+var devicePublisher = new AggregatableDevicePublisher(unicastAddresses, ssdpDevicePublisherFactory, httpDeviceInfoPublisher, port);
        
        
-       int port = 8090;
-       var networkInfoProvider = new NetworkInfoProvider();
-       var ssdpDevicePublisherFactory = new SsdpDevicePublisherFactory();
-       var httpDeviceInfoPublisher = new HttpDeviceInfoPublisher(port);
-       var devicePublisher = new AggregatableDevicePublisher(networkInfoProvider, ssdpDevicePublisherFactory, httpDeviceInfoPublisher, port);
+int port = 8090;
+var networkInfoProvider = new NetworkInfoProvider();
+var ssdpDevicePublisherFactory = new SsdpDevicePublisherFactory();
+var httpDeviceInfoPublisher = new HttpDeviceInfoPublisher(port);
+var devicePublisher = new AggregatableDevicePublisher(networkInfoProvider, ssdpDevicePublisherFactory, httpDeviceInfoPublisher, port);
 ```
 
 Description of devices will be available on specified ipaddresses and information about location of the device description will be set in the ssdp packet
 
-### #For example:
+#### For example:
 
 The description of the device will be available at this address: http://[fe80::f54c:62dd:f94b:3a9c]:1024/upnp/description/7331cc99-a757-46a5-bd99-05ece173ce38
 
@@ -60,31 +59,31 @@ And will have the following description:
 
 
 ```xml
-        <root xmlns="urn:schemas-upnp-org:device-1-0">
-        <specVersion>
-        <major>1</major>
-        <minor>0</minor>
-        </specVersion>
-        <device>
-        <deviceType>urn:test-namespace:device:test-device-type:1</deviceType>
-        <friendlyName>test-friendly-name</friendlyName>
-        <manufacturer>manufacturer</manufacturer>
-        <modelName>test-model-name</modelName>
-        <UDN>uuid:7331cc99-a757-46a5-bd99-05ece173ce38</UDN>
-        </device>
-        </root>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+<specVersion>
+<major>1</major>
+<minor>0</minor>
+</specVersion>
+<device>
+<deviceType>urn:test-namespace:device:test-device-type:1</deviceType>
+<friendlyName>test-friendly-name</friendlyName>
+<manufacturer>manufacturer</manufacturer>
+<modelName>test-model-name</modelName>
+<UDN>uuid:7331cc99-a757-46a5-bd99-05ece173ce38</UDN>
+</device>
+</root>
 ```
 
 #### Search and listen for notifications:
 
 ```c#
-        var deviceLocator = AggregatableDeviceLocator.Create();
-        deviceNotificationListener.IsMonitoringEnabled = true;
+var deviceLocator = AggregatableDeviceLocator.Create();
+deviceNotificationListener.IsMonitoringEnabled = true;
      
-        var deviceLocator.DeviceAvailable += OnDeviceAvailable;
-        var deviceLocator.DeviceUnavailable += OnDeviceUnavailable;
+var deviceLocator.DeviceAvailable += OnDeviceAvailable;
+var deviceLocator.DeviceUnavailable += OnDeviceUnavailable;
         
-        var deviceLocator.StartListeningForNotifications();
+var deviceLocator.StartListeningForNotifications();
         
-        var devices = await deviceLocator.SearchAsync();
+var devices = await deviceLocator.SearchAsync();
 ```
