@@ -67,22 +67,23 @@ namespace ExSsdp.Http
 
             var semaphore = new Semaphore(_accepts, _accepts);
 
-            var listenerAction = new Action(async delegate
+            Task.Factory.StartNew(async delegate
             {
-                try
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    await semaphore.WaitOneAsync(cancellationToken);
-                    var context = await _httpListener.GetContextAsync();
-                    semaphore.Release();
-                    await ProcessListenerContextAsync(context, cancellationToken);
+                    try
+                    {
+                        await semaphore.WaitOneAsync(cancellationToken);
+                        var context = await _httpListener.GetContextAsync();
+                        await ProcessListenerContextAsync(context, cancellationToken);
+                        semaphore.Release();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine(ex);
+                    }
                 }
-                catch (Exception)
-                {
-                    //ignore
-                }
-            });
-
-            Repeater.DoInfinityAsync(listenerAction, TimeSpan.FromMilliseconds(150), cancellationToken);
+            }, TaskCreationOptions.LongRunning, cancellationToken);
         }
 
         public void Dispose()

@@ -1,7 +1,9 @@
-﻿namespace ExSsdp.Http
+﻿using System.Threading.Tasks;
+
+namespace ExSsdp.Http
 {
 	internal interface IHttpAvailabilityChecker
 	{
-		bool Check(string url);
+		Task<bool> Check(string url);
 	}
 }
