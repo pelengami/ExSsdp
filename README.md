@@ -1,12 +1,7 @@
 # ExSsdp
 
-### Build Status
 [![Build status](https://ci.appveyor.com/api/projects/status/w9dgggye8576hsal?svg=true)](https://ci.appveyor.com/project/qine/exssdp)
-
-### License
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-
-### Nuget
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![NuGet](https://img.shields.io/nuget/v/ExSsdp.svg?style=flat-square)](https://www.nuget.org/packages/ExSsdp/)
 
 ### Description
