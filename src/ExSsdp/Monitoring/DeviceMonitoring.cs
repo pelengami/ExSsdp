@@ -1,76 +1,75 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Tasks;
 using ExSsdp.Http;
 using ExSsdp.Util;
 using Rssdp;
 
 namespace ExSsdp.Monitoring
 {
-	internal sealed class DeviceMonitoring : IDisposable
-	{
-		private readonly ConcurrentDictionary<string, DiscoveredSsdpDevice> _discoveredSsdpDevices = new ConcurrentDictionary<string, DiscoveredSsdpDevice>();
-		private readonly HttpAvailabilityChecker _availabilityChecker = new HttpAvailabilityChecker();
-		private CancellationTokenSource _httpAvailabilyTokenSource = new CancellationTokenSource();
+    internal sealed class DeviceMonitoring : IDisposable
+    {
+        private readonly ConcurrentDictionary<string, DiscoveredSsdpDevice> _discoveredSsdpDevices = new ConcurrentDictionary<string, DiscoveredSsdpDevice>();
+        private readonly HttpAvailabilityChecker _availabilityChecker = new HttpAvailabilityChecker();
+        private CancellationTokenSource _httpAvailabilyTokenSource = new CancellationTokenSource();
 
-		public event EventHandler<DeviceUnavailableEventArgs> DeviceUnvailable;
+        public event EventHandler<DeviceUnavailableEventArgs> DeviceUnvailable;
 
-		public void Run()
-		{
-			if (!_httpAvailabilyTokenSource.IsCancellationRequested)
-				_httpAvailabilyTokenSource.Cancel();
+        public void Run()
+        {
+            if (!_httpAvailabilyTokenSource.IsCancellationRequested)
+                _httpAvailabilyTokenSource.Cancel();
 
-			_httpAvailabilyTokenSource = new CancellationTokenSource();
+            _httpAvailabilyTokenSource = new CancellationTokenSource();
 
-			var monitoringAction = GetMonitoringAction();
+            Task.Factory.StartNew(async delegate
+            {
+                while (!_httpAvailabilyTokenSource.IsCancellationRequested)
+                {
+                    foreach (var discoveredSsdpDevice in _discoveredSsdpDevices)
+                    {
+                        var location = discoveredSsdpDevice.Key;
+                        var isAvailable = await _availabilityChecker.Check(location);
+                        if (isAvailable)
+                            continue;
 
-			Repeater.DoInfinityAsync(monitoringAction, TimeSpan.FromSeconds(10), _httpAvailabilyTokenSource.Token);
-		}
+                        var discoveredDevice = discoveredSsdpDevice.Value;
 
-		public void Stop()
-		{
-			if (_httpAvailabilyTokenSource.IsCancellationRequested)
-				_httpAvailabilyTokenSource.Cancel();
-		}
+                        DiscoveredSsdpDevice tempDevice;
+                        if (_discoveredSsdpDevices.TryRemove(location, out tempDevice))
+                            DeviceUnvailable?.Invoke(this, new DeviceUnavailableEventArgs(discoveredDevice, false));
+                    }
 
-		public void AddDevice(DiscoveredSsdpDevice device)
-		{
-			var location = device.DescriptionLocation.ToString();
+                    await Task.Delay(10000);
+                }
+            }, TaskCreationOptions.LongRunning, _httpAvailabilyTokenSource.Token);
+        }
 
-			if (!_discoveredSsdpDevices.ContainsKey(location))
-				_discoveredSsdpDevices.TryAdd(location, device);
-		}
+        public void Stop()
+        {
+            if (_httpAvailabilyTokenSource.IsCancellationRequested)
+                _httpAvailabilyTokenSource.Cancel();
+        }
 
-		public void RemoveDevice(DiscoveredSsdpDevice device)
-		{
-			DiscoveredSsdpDevice tempDevice;
-			_discoveredSsdpDevices.TryRemove(device.DescriptionLocation.ToString(), out tempDevice);
-		}
+        public void AddDevice(DiscoveredSsdpDevice device)
+        {
+            var location = device.DescriptionLocation.ToString();
 
-		public void Dispose()
-		{
-			if (_httpAvailabilyTokenSource.IsCancellationRequested)
-				_httpAvailabilyTokenSource.Cancel();
-		}
+            if (!_discoveredSsdpDevices.ContainsKey(location))
+                _discoveredSsdpDevices.TryAdd(location, device);
+        }
 
-		private Action GetMonitoringAction()
-		{
-			return delegate
-			{
-				foreach (var discoveredSsdpDevice in _discoveredSsdpDevices)
-				{
-					var location = discoveredSsdpDevice.Key;
-					var isAvailable = _availabilityChecker.Check(location);
-					if (isAvailable)
-						continue;
+        public void RemoveDevice(DiscoveredSsdpDevice device)
+        {
+            DiscoveredSsdpDevice tempDevice;
+            _discoveredSsdpDevices.TryRemove(device.DescriptionLocation.ToString(), out tempDevice);
+        }
 
-					var discoveredDevice = discoveredSsdpDevice.Value;
-
-					DiscoveredSsdpDevice tempDevice;
-					if (_discoveredSsdpDevices.TryRemove(location, out tempDevice))
-						DeviceUnvailable?.Invoke(this, new DeviceUnavailableEventArgs(discoveredDevice, false));
-				}
-			};
-		}
-	}
+        public void Dispose()
+        {
+            if (_httpAvailabilyTokenSource.IsCancellationRequested)
+                _httpAvailabilyTokenSource.Cancel();
+        }
+    }
 }
