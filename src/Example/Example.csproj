@@ -74,9 +74,9 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Rssdp.Native, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Rssdp.3.0.0\lib\net45\Rssdp.Native.dll</HintPath>
+    <Reference Include="Rssdp.Native, Version=3.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rssdp.3.0.3\lib\net45\Rssdp.Native.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

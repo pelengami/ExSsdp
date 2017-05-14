@@ -67,8 +67,8 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Rssdp.Native, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Rssdp.3.0.0\lib\net45\Rssdp.Native.dll</HintPath>
+    <Reference Include="Rssdp.Native, Version=3.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rssdp.3.0.3\lib\net45\Rssdp.Native.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -104,7 +104,6 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
